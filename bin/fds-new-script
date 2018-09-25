@@ -1,0 +1,82 @@
+#!/usr/bin/env python
+# fds-new-script.py
+# 2018-08-15 david.montaner@gmail.com
+# fds-tools python script
+# script to create a script form a template
+
+
+import os
+import datetime
+import argparse
+from fds_lib import fds
+
+# SCRIPT PARAMETERS
+parser = argparse.ArgumentParser(description='Creates a new script using the appropriated template.')
+
+parser.add_argument('filename', help='The script to be created.')
+parser.add_argument('-c', '--comment',
+                    help='Comment. Will be included in the header of the script',
+                    default = '??? WHAT THE SCRIPT DOES ???')
+
+args = parser.parse_args()
+
+filename = args.filename
+
+# file extension
+fext = filename.split('.')[-1].lower()
+
+# CHECK THAT THE FILE DOES NO EXIST
+if os.path.isdir(filename) | os.path.isfile(filename):
+    print('File', filename, 'already exists.')
+    exit(1)
+
+################################################################################
+
+
+# Find fds-tools library location.
+# And state template directory.
+# see if this can be improved
+tdir = os.path.join(os.path.expanduser('~/'), '.fds-tools', 'templates')
+
+# read template list and derive extensions
+my_tpl = os.listdir(tdir)
+my_ext = [x.split('.')[-1].lower() for x in my_tpl]
+
+# EXIT IF THE FILE EXTENSION IS NOT KNOX
+if fext not in my_ext:
+    print('There is not template matching your file extension')
+    exit(1)
+
+################################################################################
+
+# READ TEMPLATE
+i = my_ext.index(fext)  # return FIRST index of value.
+template = my_tpl[i]
+template = os.path.join(tdir, template)
+
+f = open(template, 'r')
+lineas = f.readlines()
+f.close()
+
+# replace filename
+lineas = [x.replace('(>>>FILE<<<)', filename) for x in lineas]
+
+# replace date 
+dia = datetime.datetime.today().strftime('%Y-%m-%d')
+lineas = [x.replace('(>>>ISO_DATE<<<)', dia) for x in lineas]
+
+# replace email
+jst = fds.fdsJob()
+jst.update_from_conf()
+lineas = [x.replace('(>>>EMAIL<<<)', jst.email) for x in lineas]
+
+# replace comment
+lineas = [x.replace('(>>>COMMENT<<<)', args.comment) for x in lineas]
+
+# SAVE NEW SCRIPT
+g = open(filename, 'w')
+g.writelines(lineas)
+g.close()
+
+# exit
+print('DONE')

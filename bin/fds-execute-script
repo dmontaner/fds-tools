@@ -1,0 +1,151 @@
+#!/bin/bash
+# fds-execute-script
+# 2018-08-15 david.montaner@gmail.com
+# fds-tools shell script
+# execute scripts and keep log files of the execution
+
+# currently working for:
+# - .py  or .PY  files using python
+# - .sh  or .SH  files using bash -e
+# - .sql or .SQL files using impala-shell
+# - .r   or .R   files using R CMD BATCH --vanilla
+
+# Yo should configure your interpreter (R, python, bash, ...) versions in your own machine.
+
+# To Do:
+# - implement md files using pandoc. Separate docs and slides
+# - implement scala
+# - Include here some testing for the file name: no whites or other funny characters allowed.
+# - See how to generalize the impala server:
+#   optbukdev-odbc.gmail.intranet:21000
+# - See how to insert `myhead` in the Rout files.
+
+# NOTE:
+# Watch out when `bash -e` because some commands may return 'funny errors'.
+# For example grep will return a 1 if nothing is found.
+
+
+################################################################################
+### FUNCTIONS
+################################################################################
+
+function myhead {
+    # $1 : the log file
+    # $2 : the interpreter used to execute the script
+    local mylogfile=$1
+    echo "==> running $2"
+    date '+%Y-%m-%d %H:%M:%S' | tee $1
+    echo `whoami`@`hostname`  >>    $1
+    echo ''                   >>    $1
+}
+
+function myfoot {
+    # $1 : the log file
+    # $2 : the error status from the previous call
+    echo ''                      >>    $1
+    date '+%Y-%m-%d %H:%M:%S' | tee -a $1
+    if [ $2 -eq 0 ]
+    then
+        echo "DONE OK" | tee -a $1
+    else
+        echo "ERROR"   | tee -a $1
+    fi
+}
+
+
+################################################################################
+### Init and checks
+################################################################################
+
+myscript=$1
+logfile="${myscript}".log
+
+# srart time
+echo ""
+echo "==> RUNNING fds-execute-script on file: " $myscript
+
+# empty
+if [ -z "${myscript}" ]
+then
+    echo "No input file given!";
+    exit 1
+fi
+
+# is a directory
+if [ -d "${myscript}" ]
+then
+    echo "$myscript is a directory!";
+    exit 1
+fi
+
+# not a file
+if [ ! -f "${myscript}" ]
+then
+    echo "File not found!"
+    exit 1
+fi
+
+
+################################################################################
+### Execute Script
+################################################################################
+
+    
+## PYTHON ##################################################
+
+if [[ ("${myscript}" == *.py) || ("${myscript}" == *.PY) ]]
+then
+    myhead "${logfile}" 'python'
+    set -o pipefail
+    #
+    python3 "${myscript}" >> "${logfile}" 2>&1
+    #
+    myfoot "${logfile}" $?
+fi
+
+
+## BASH ####################################################
+
+if [[ ("${myscript}" == *.sh) || ("${myscript}" == *.SH) ]]
+then
+    myhead "${logfile}" 'bash'
+    set -euo pipefail
+    #
+    bash -e "${myscript}" >> "${logfile}" 2>&1   # -e: terminates the script when any command yields an error
+    #
+    myfoot "${logfile}" $?
+fi
+
+
+## SQL #####################################################
+
+if [[ ("${myscript}" == *.sql) || ("${myscript}" == *.SQL) ]]
+then
+    # remove comments and anything behind them from the script file because there is a bug in impala
+    mitmp=mktmp
+    sed 's/\-\-.*//' "${myscript}" > $mitmp  
+    
+    myhead "${logfile}" 'impala-shell'
+    set -o pipefail
+    #
+    impala-shell -k --ssl -i optbukdev-odbc.gmail.intranet:21000 -f $mitmp >> "${logfile}"
+    #
+    myfoot "${logfile}" $?
+fi
+
+
+## R #######################################################
+
+if [[ ("${myscript}" == *.r) || ("${myscript}" == *.R) ]]
+then
+    # use standard Rout as log file name
+    logfile="${myscript}".Rout  # see how to do it for .R files
+    
+    myhead "${logfile}" 'R CMD BATCH'
+    set -o pipefail
+    #
+    # R CMD BATCH --vanilla "${myscript}" "${logfile}"
+    R --vanilla < "${myscript}" >> "${logfile}" 2>&1
+    #
+    myfoot "${logfile}" $?
+fi

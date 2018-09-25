@@ -1,0 +1,17 @@
+#!/bin/bash
+# fds-job-log
+# 2018-08-15 david.montaner@gmail.com
+# fds-tools shell script
+# execute all scripts in the job folder
+
+# just lower case extensions are used: .py .r
+
+ficheros=$(ls | grep -e ".log$" -e ".Rout$")
+
+for fi in $ficheros
+do
+    echo ""
+    echo "==> " $fi
+    head -n 1 $fi
+    tail -n 2 $fi
+done

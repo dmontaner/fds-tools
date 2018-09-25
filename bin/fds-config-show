@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+# fds-config-show
+# 2018-08-15 david.montaner@gmail.com
+# fds-tools python script
+# script to show user/local config options in the screen
+# may be used to crate a quick config piping > from the command line
+
+import os
+import sys
+import argparse
+import configparser
+from fds_lib import fds
+
+# SCRIPT PARAMETERS
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    description='Shows the current config options for fds-tools.',
+    epilog='''
+It may be used to crate a quick config file by piping its output:
+    fds-show-conf > mi_config.txt
+    '''
+)
+args = parser.parse_args()
+
+################################################################################
+
+# FDS FUNCTIONS
+jst = fds.fdsJob()
+jst.update_from_conf()
+
+# create dictionary
+my_dict = jst.to_dict()
+
+# config file format
+parser = configparser.ConfigParser()
+parser.read_dict(my_dict)
+
+# send to standard output
+f = sys.stdout
+parser.write(f)
+f.close()

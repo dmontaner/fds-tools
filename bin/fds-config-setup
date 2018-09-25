@@ -1,0 +1,151 @@
+#!/usr/bin/env python
+# fds-config-setup
+# 2018-08-15 david.montaner@gmail.com
+# fds-tools python script
+# set up fds-tools global configuration
+
+
+import os
+import shutil
+import datetime
+import argparse
+import configparser
+from fds_lib import fds
+import fds_templates
+
+# first parameters
+my_home = os.path.expanduser('~/')  # this should work for Mac and Linux
+my_year = datetime.datetime.today().strftime('%Y')
+
+my_config_dir     = os.path.join(my_home, '.fds-tools')
+my_templates_dir  = os.path.join(my_config_dir, 'templates')
+my_config_file    = os.path.join(my_config_dir, 'config')
+
+
+# SCRIPT ARGUMENTS
+parser = argparse.ArgumentParser(
+    description='Create fds-tools configuration files.',
+    epilog='''
+The script will create code an data directories at:
+    ~/code/{0}
+    ~/data/{0}
+And the fds-tools config file at:
+    ~/.fds-tools/config
+    '''.format(my_year),
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    prog='install'
+)
+
+parser.add_argument('-e', '--email',   help='your email here', required=True)
+# parser.add_argument('-p', '--profile', help='Bash profile file to be used (not full path is required, just the file name). Default is .bash_profile. Binary path will be added to this file.', default = '.bash_profile')
+parser.add_argument('-c', '--codedir', help='Base directory for your code.', default = os.path.join(my_home, 'code', my_year))
+parser.add_argument('-d', '--datadir', help='Base directory for your data.', default = os.path.join(my_home, 'data', my_year))
+# parser.add_argument('-f', '--file',    help='Configuration file.', default = os.path.join(my_home, '.fds-tools.conf'))
+# parser.add_argument('-f', '--config_dir', help='Configuration directory.', default = os.path.join(my_home, '.fds-tools'))
+
+args = parser.parse_args()
+
+# parameters
+my_email        = args.email
+my_code_dir     = args.codedir
+my_data_dir     = args.datadir
+
+################################################################################
+
+# CREATE CONFIG DIRECTORY
+if os.path.isdir(my_config_dir) | os.path.isfile(my_config_dir):
+    print('')
+    print('Config directory:')
+    print('    ', my_config_dir)
+    print('already existed. Nothing done.')
+else:
+    os.makedirs(my_config_dir)
+    print('')
+    print('Created config directory:')
+    print('    ', my_config_dir)
+
+################################################################################
+
+# CREATE TEMPLATES DIR
+if os.path.isdir(my_templates_dir) | os.path.isfile(my_templates_dir):
+    print('')
+    print('Templates directory:')
+    print('    ', my_templates_dir)
+    print('already existed. Nothing done.')
+else:
+    os.makedirs(my_templates_dir)
+    print('')
+    print('Created templates directory:')
+    print('    ', my_templates_dir)
+
+# COPY TEMPLATES
+for t in fds_templates.templates:
+    f = os.path.join(my_templates_dir, os.path.basename(t))
+    if os.path.isfile(f):
+        print('')
+        print('Template file:')
+        print('    ', f)
+        print('already exists. Not updated. Please delete the file if you want to install the latest version.')
+    else:
+        shutil.copy(t, f)
+        print('')
+        print('Template file:')
+        print('    ', f)
+        print('Created.')
+
+################################################################################
+
+# CREATE CONFIG FILE
+if os.path.isdir(my_config_file) | os.path.isfile(my_config_file):
+    print('')
+    print('Config file:')
+    print('    ', my_config_file)
+    print('already exists. Nothing done.')
+    # exit(1)
+else:
+    # parser
+    parser = configparser.ConfigParser()
+    parser.read_dict(
+        {'local': {
+            'base_dir_code': my_code_dir,
+            'base_dir_data': my_data_dir,
+            'email'        : my_email
+            }
+        }
+    )
+    # write
+    f = open(my_config_file, 'w')
+    parser.write(f)
+    f.close()
+    # message
+    print('')
+    print('Created config file:')
+    print('    ', my_config_file)
+
+    # create code dir
+    if os.path.isdir(my_code_dir) | os.path.isfile(my_code_dir):
+        print('')
+        print('Code directory:')
+        print('    ', my_code_dir)
+        print('already existed.')
+    else:
+        os.makedirs(my_code_dir)  # will recursively include the year
+        print('')
+        print('Created code directory:')
+        print('    ', my_code_dir)
+
+    # create data dir
+    if os.path.isdir(my_data_dir) | os.path.isfile(my_data_dir):
+        print('')
+        print('Data directory:')
+        print('    ', my_data_dir)
+        print('already existed.')
+    else:
+        os.makedirs(my_data_dir)  # will recursively include the year
+        print('')
+        print('Created data directory:')
+        print('    ', my_data_dir)
+
+################################################################################
+
+print('')

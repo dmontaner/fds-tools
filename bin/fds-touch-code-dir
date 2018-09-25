@@ -1,0 +1,40 @@
+#!/usr/bin/env python
+# fds-touch-code-dir.py
+# 2018-08-15 david.montaner@gmail.com
+# fds-tools python script
+# script to create a code dir template for the given job name
+
+
+import os
+import argparse
+from fds_lib import fds
+
+# SCRIPT PARAMETERS
+parser = argparse.ArgumentParser(description='Creates a new code directory structure.')
+
+parser.add_argument('jobname', help='The job name to be used. This will be the name of the created code directory.')
+
+parser.add_argument('-e', '--here', action='store_true',
+                    help='''By default the new code directory is created in the "base_dir_code" as indicated in the ~/.fds-tools/config file.
+                    If -e/--here is set, the code directory will be created in the current working directory.
+                    ''')
+
+args = parser.parse_args()
+
+job_name = args.jobname
+here = args.here
+
+################################################################################
+
+# FDS FUNCTIONS
+jst = fds.fdsJob()
+jst.update_from_conf()
+
+jst.jobname = job_name
+
+if here:
+    jst.base_dir_code = os.getcwd()
+
+jst.create_dir_code()
+
+print('DONE')

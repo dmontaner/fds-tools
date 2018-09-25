@@ -1,0 +1,55 @@
+#!/usr/bin/env python
+# fds-create-job.py
+# 2018-08-15 david.montaner@gmail.com
+# fds-tools python script
+# script to create a new .job.conf file from the current working dir (or a given one)
+
+# The script is thought to be used after fds-touch-code-dir:
+# it assumes that the path to the "scripts" directory exists (or is the working dir)
+
+import os
+import argparse
+from fds_lib import fds
+
+# SCRIPT PARAMETERS
+parser = argparse.ArgumentParser(description='Creates a new job directory structure.')
+
+parser.add_argument('path', help='Path to the scripts directory where the .job.conf should be created. If not set current working directory will be used', nargs='?', default=os.getcwd())
+
+args = parser.parse_args()
+
+mypath = args.path
+
+################################################################################
+
+# CHECK IF THE FILE EXISTS
+# may be I should do this check in function fds.write_job_conf 
+file = os.path.join(mypath, '.job.conf')
+
+if os.path.isfile(file) | os.path.isdir(file):
+    print('.job.conf file already exists at:')
+    print(file )
+    exit(1)
+
+################################################################################
+
+# FDS FUNCTIONS
+jst = fds.fdsJob()
+jst.update_from_conf()
+
+bd, jn = fds.infer_jobname_from_path(mypath)
+
+jst.base_dir_code = bd
+jst.jobname = jn
+
+# fix functions folder
+# if 'dir_functions' in jst.tree_code.keys():
+if jst.add_functions_dir:
+    jst.tree_code['dir_functions'] = os.path.join(jst.tree_code['dir_scripts'], 'functions')  # this will need re-code if the functions folder is named different from 'functions'
+
+# create .job.conf
+jst.write_job_conf()
+
+print('Created .job.conf file')
+print('REVISE THAT THE DATA DIR IS CORRECT AS ITS BASE DIR IS TAKEN FROM ~/.fds-tools/config')
+print('DONE')

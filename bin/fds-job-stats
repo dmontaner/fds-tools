@@ -1,0 +1,139 @@
+#!/usr/bin/env python
+# fds-job-stats.py
+# 2018-08-15 david.montaner@gmail.com
+# fds-tools python script
+# script to collect information on the .log files and create a report of the overall job execution
+
+
+import os
+import argparse
+from datetime import datetime
+from datetime import timedelta
+import tabulate
+# from fds_lib import fds
+
+# SCRIPT PARAMETERS
+parser = argparse.ArgumentParser(
+    formatter_class=argparse.RawDescriptionHelpFormatter,
+    description='Displays overall job execution statistics.',
+    epilog='''
+ The command will show a table with a row per scripts and the following columns:
+
+ - SCRIPT:  script name.
+ - LOGFILE: log file name.
+ - STATUS:  status of the execution.
+ - MOD:     script modification date. Should be smaller than the START date.
+ -  < :     is the MODification date smaller than the START date? Generally should be True.
+ - START:   start time.
+ - ST^ED':  (SORTED) Indicates if the execution time is sorted relative to the previous log file. START_current_log > END_previous_log.
+            The caption should be read as: Is STart is greater than the ENd of the previous script?
+ - END:     end time.
+ - TIME:    execution time.
+ - USER:    user executing the job (just if parameter -u is set)
+ ''')
+
+parser.add_argument('-u', '--user', help='show user', action='store_true')
+
+args = parser.parse_args()
+
+def exte(x):
+    '''returns file extension without the dot'''
+    return os.path.splitext(x)[1][1:]
+
+
+# time format in the log files
+tf = '%Y-%m-%d %H:%M:%S'
+
+# script extensions
+myext = ['py', 'r', 'R', 'sh', 'sql']
+
+################################################################################
+
+scripts = sorted(os.listdir())
+scripts = [x for x in scripts if exte(x)in myext]
+
+t0 = datetime.strptime('1977-07-03 00:00:00', tf)
+total = timedelta(0)
+datos = []
+
+for sfile in scripts:
+    
+    # derive log file name
+    ex = exte(sfile)
+    
+    if ex in ['r', 'R']:
+        lfile = sfile + '.Rout'
+    else:
+        lfile = sfile + '.log'
+
+    # latest modification time of the script
+    mod = datetime.fromtimestamp(os.path.getmtime(sfile))
+
+    # read log information
+    if os.path.isfile(lfile):
+
+        # read log file
+        with open(lfile) as re:
+            li = re.readlines()
+
+        # strip end of lines
+        li = [x.strip() for x in li]
+
+        # collect log information        
+        sta_t  = li[ 0]
+        user   = li[ 1]
+        end_t  = li[-2]
+        status = li[-1]
+
+        # format beginning times
+        beg = datetime.strptime(sta_t, tf)
+
+        # test modification date
+        mod_ok = mod < beg
+
+        # format end times
+        try:
+            end = datetime.strptime(end_t, tf)
+        except:
+            end = None
+
+        if end is None:
+            span = '*'
+            srtd = '*'
+            # t0 : I keep the previous one here
+            end_t = 'broken'
+        else:
+            span = end - beg
+            srtd = beg >= t0
+            t0 = end
+            total += span
+
+        # format status
+        if status not in ['DONE OK', 'ERROR']:
+            status = 'broken'
+
+    else:
+        lfile  = '*'
+        user   = '.'
+        sta_t  = '.'
+        end_t  = '.'
+        status = '.'
+        span   = '.'
+        srtd   = '.'
+        mod_ok = '.'
+
+    mod = mod.strftime(tf)
+    datos.append([sfile, lfile, status, mod, mod_ok, sta_t, srtd, end_t, span, user])
+
+heads = ['SCRIPT', 'LOGFILE', 'STATUS', 'MOD', '<', 'START', 'ST^ED', 'END', 'TIME', 'USER']
+
+if not args.user:
+    heads.pop()
+    datos = [x[:-1] for x in datos]
+
+print('')
+print(tabulate.tabulate(datos, headers = heads))
+print('')
+
+print('Total execution time:', total)
+print('')

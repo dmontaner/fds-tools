@@ -1,0 +1,41 @@
+#!/usr/bin/env python
+# fds-touch-data-dir.py
+# 2018-08-15 david.montaner@gmail.com
+# fds-tools python script
+# script to create a data dir template for the given job name
+
+
+import os
+import argparse
+from fds_lib import fds
+
+# SCRIPT PARAMETERS
+parser = argparse.ArgumentParser(description='Creates a new data directory structure.')
+
+parser.add_argument('jobname', help='The job name to be used. This will be the name of the created data directory.')
+
+parser.add_argument('-e', '--here', action='store_true',
+                    help='''By default the new data directory is created in the "base_dir_data" as indicated in the ~/.fds-tools/config file.
+                    If -e/--here is set, the data directory will be created in the current working directory.
+                    ''')
+
+
+args = parser.parse_args()
+
+job_name = args.jobname
+here = args.here
+
+################################################################################
+
+# FDS FUNCTIONS
+jst = fds.fdsJob()
+jst.update_from_conf()
+
+jst.jobname = job_name
+
+if here:
+    jst.base_dir_data = os.getcwd()
+
+jst.create_dir_data()
+
+print('DONE')

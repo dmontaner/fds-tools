@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+# fds-create-job.py
+# 2018-08-15 david.montaner@gmail.com
+# fds-tools python script
+# script to create a new job directory structure
+
+
+import os
+import argparse
+from fds_lib import fds
+
+# SCRIPT PARAMETERS
+parser = argparse.ArgumentParser(description='Creates a new job directory structure.')
+
+parser.add_argument('jobname', help='The name of the job to be created.')
+
+args = parser.parse_args()
+
+job_name = args.jobname
+
+################################################################################
+
+# FDS FUNCTIONS
+jst = fds.fdsJob()
+jst.update_from_conf()
+
+jst.jobname = job_name
+
+jst.create_job()
+
+print('DONE')

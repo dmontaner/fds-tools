@@ -1,0 +1,96 @@
+#!/bin/bash
+# fds-job_execute-all
+# 2018-08-15 david.montaner@gmail.com
+# fds-tools shell script
+# execute all scripts in the job folder
+
+# HELP
+if [ "$1" == "-h" ]
+then
+    echo "
+usage: fds-job-execute [-h] [-t] [-r regex] [files]
+
+Executes ALL scripts in the current folder in alphabetical order.
+
+Currently used extensions are: .py .r .R .sh .sql
+
+[files] file names or file name patterns as used in 'ls' syntax.
+
+If the '-r' option is provided then regular expressions are used to filter [files].
+Extended regular expressions are used as in 'grep -E' or 'egrep'.
+
+For instance you can do:
+
+    fds-job-execute *.py              # all python scripts
+    fds-job-execute *.R               # all R scripts
+    fds-job-execute s010_*            # all scripts which name starts with s010_
+
+    fds-job-execute -r mypattern      # contains mypattern
+    fds-job-execute -r ^k0            # starts with k0
+    fds-job-execute -r ^k0[12]        # starts with k01 or k02
+    fds-job-execute -r '^k01|^k02'    # starts with k01 or k02 ; ' is needed if | is not escaped
+    fds-job-execute -r ^k01\|^k02     # starts with k01 or k02 ; the \ is necessary here and the '
+    fds-job-execute -r '^k(01|02)'    # starts with k01 or k02 ; ' is needed
+    fds-job-execute -r R$             # ends with R
+    fds-job-execute -r py$            # ends with py
+    fds-job-execute -r '(R|py)$       # ends with R or py
+
+    fds-job-execute -r '\.R$'         # has .R  extension. The ' is formally needed for the grep.
+    fds-job-execute -r '\.py$'        # has .py extension
+    fds-job-execute -r '(\.R|\.py)$'  # has .py extension
+
+    fds-job-execute -r '^[^TAG]'      # does NOT start with TAG
+    fds-job-execute -r '^[py$]'       # does NOT end   with py
+
+-t: testing mode. Scripts to be executed will be displayed but not actually executed. 
+    Use this option to test your regular expressions before running them.
+-r: regular expressions to define the files which have to be executed.
+
+files: files or file name pattern.
+"
+    exit
+
+# TESTING MODE
+elif [ "$1" == "-t" ]
+then
+    modo="testing"
+    shift
+    echo "fds-job-execute" $@
+    echo "    will run this files:"
+fi
+
+################################################################################
+
+# REGULAR EXPRESSION MODE
+if [ "$1" == "-r" ]
+then
+    regexp="true"
+    shift
+    pat=$1
+    shift
+else
+    regexp="false"
+fi
+
+# FILES
+if [ "$regexp" == "true" ]
+then
+    ficheros=$(ls "$@" | grep -e "\.py$" -e "\.r$" -e "\.R$"  -e "\.sh$" -e "\.sql$" | grep -E $pat)
+else
+    echo $pat
+    ficheros=$(ls "$@" | grep -e "\.py$" -e "\.r$" -e "\.R$"  -e "\.sh$" -e "\.sql$")
+fi
+
+################################################################################
+
+# EXECUTE
+for fi in $ficheros
+do
+    if [ "$modo" == "testing" ]
+    then
+        echo $fi
+    else
+        fds-execute-script $fi
+        sleep 1 # just to make sure that log times do not overlap
+    fi
+done
