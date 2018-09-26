@@ -81,6 +81,11 @@ Update using pip from your (HTTP) local clone of the repository:
     git pull origin master
     pip3 install -U .
 
+To update your __templates__:
+
+    rm -r ~/.fds-tools/templates
+    fds-config-setup -e your.emails@here.com
+
 
 Dependencies
 --------------------------------------------------------------------------------
