@@ -137,7 +137,8 @@ class fdsJob:
             tree_code = {
                 'dir_code':      "",
                 'dir_scripts':   "scripts",
-                'dir_functions': os.path.join("scripts", "functions"),
+                # 'dir_functions': os.path.join("scripts", "functions"),
+                'dir_functions': "functions",
                 'dir_docs':      "documents"
             }
 

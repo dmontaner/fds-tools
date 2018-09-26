@@ -11,7 +11,7 @@ templates = [x for x in os.listdir('fds_templates') if 'fds-template' in x]
 
 setup(
     name='fds-tools',
-    version='0.3.0',
+    version='0.3.1',
     author='David Montaner',
     author_email='david.montaner@gmail.com',
     license='MIT',
