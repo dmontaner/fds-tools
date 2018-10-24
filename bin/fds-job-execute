@@ -55,7 +55,7 @@ elif [ "$1" == "-t" ]
 then
     modo="testing"
     shift
-    echo "fds-job-execute" $@
+    echo "fds-job-execute"  # $@
     echo "    will run this files:"
 fi
 
