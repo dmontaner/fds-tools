@@ -45,7 +45,7 @@ jst.jobname = jn
 # fix functions folder
 # if 'dir_functions' in jst.tree_code.keys():
 if jst.add_functions_dir:
-    jst.tree_code['dir_functions'] = os.path.join(jst.tree_code['dir_scripts'], 'functions')  # this will need re-code if the functions folder is named different from 'functions'
+    jst.tree_code['dir_functions'] = os.path.join(jst.tree_code['dir_code'], 'functions')  # this will need re-code if the functions folder is named different from 'functions'
 
 # create .job.conf
 jst.write_job_conf()
