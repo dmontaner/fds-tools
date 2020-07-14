@@ -1,4 +1,3 @@
-#!/usr/local/bin/python3
 # setup.py
 # 2018-08-15 david.montaner@gmail.com
 # fds-tools setup
@@ -11,7 +10,7 @@ templates = [x for x in os.listdir('fds_templates') if 'fds-template' in x]
 
 setup(
     name='fds-tools',
-    version='0.3.3',
+    version='0.3.4',
     author='David Montaner',
     author_email='david.montaner@gmail.com',
     license='MIT',
