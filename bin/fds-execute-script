@@ -98,7 +98,7 @@ then
     myhead "${logfile}" 'python'
     set -o pipefail
     #
-    python3 "${myscript}" "${@:2}" >> "${logfile}" 2>&1
+    python3.8 "${myscript}" "${@:2}" >> "${logfile}" 2>&1
     #
     myfoot "${logfile}" $?
 fi
